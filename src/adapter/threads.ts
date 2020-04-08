@@ -25,6 +25,8 @@ import { UserDefinedBreakpoint } from './breakpoints/userDefinedBreakpoint';
 import { ILogger } from '../common/logging';
 import { AnyObject } from './objectPreview/betterTypes';
 import { IEvaluator } from './evaluator';
+import * as WasmDis from 'wasm-parser/dist/WasmDis';
+import * as WasmParser from 'wasm-parser/dist/WasmParser';
 
 const localize = nls.loadMessageBundle();
 
@@ -1085,7 +1087,32 @@ export class Thread implements IVariableStoreDelegate {
 
       const contentGetter = async () => {
         const response = await this._cdp.Debugger.getScriptSource({ scriptId: event.scriptId });
-        return response ? response.scriptSource : undefined;
+        if (response?.bytecode) {
+          // This is Wasm script.
+          const url = `data:application/wasm;base64,${response?.bytecode}`;
+          const str = await urlUtils.fetch(url);
+          const buf = new ArrayBuffer(str.length); // 1 bytes for each char
+          const bufView = new Uint8Array(buf);
+          for (let i = 0; i < str.length; i++) {
+            bufView[i] = str.charCodeAt(i);
+          }
+          const wasmParser = new WasmParser.BinaryReader();
+          wasmParser.setData(bufView.buffer, 0, bufView.length);
+          const wasmDis = new WasmDis.WasmDisassembler();
+          wasmDis.addOffsets = true;
+          wasmDis.disassembleChunk(wasmParser);
+          const result = wasmDis.getResult();
+          return {
+            content: result.lines.join('\n'),
+            lineMap: result.offsets,
+          };
+        }
+        return response
+          ? {
+              content: response.scriptSource,
+              lineMap: undefined,
+            }
+          : undefined;
       };
       const inlineSourceOffset =
         event.startLine || event.startColumn
