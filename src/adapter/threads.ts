@@ -25,8 +25,8 @@ import { UserDefinedBreakpoint } from './breakpoints/userDefinedBreakpoint';
 import { ILogger } from '../common/logging';
 import { AnyObject } from './objectPreview/betterTypes';
 import { IEvaluator } from './evaluator';
-import * as WasmDis from 'wasm-parser/dist/WasmDis';
-import * as WasmParser from 'wasm-parser/dist/WasmParser';
+import * as WasmDis from 'wasmparser/dist/WasmDis';
+import * as WasmParser from 'wasmparser/dist/WasmParser';
 
 const localize = nls.loadMessageBundle();
 

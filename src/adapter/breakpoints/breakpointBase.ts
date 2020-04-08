@@ -193,20 +193,6 @@ export abstract class Breakpoint {
       return;
     }
 
-    if (source._lineMap) {
-      const wasmDisassemblyLine = (byteOffset: number, lineMap: number[]) => {
-        let line = 0;
-        // TODO: Implement binary search if necessary for large wasm modules
-        while (line < lineMap.length && byteOffset > lineMap[line]) {
-          line++;
-        }
-        return line;
-      };
-
-      uiLocation.lineNumber = wasmDisassemblyLine(uiLocation.columnNumber, source._lineMap);
-      uiLocation.columnNumber = 1;
-    }
-
     this.updateCdpRefs(list =>
       list.map(bp =>
         bp.state === CdpReferenceState.Applied && bp.cdpId === cdpId

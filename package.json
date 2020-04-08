@@ -63,7 +63,7 @@
     "vscode-js-debug-browsers": "^1.0.0",
     "vscode-nls": "^4.1.1",
     "ws": "^7.0.1",
-    "wasm-parser": "^0.11.2"
+    "wasmparser": "^0.11.2"
   },
   "prettier": {
     "trailingComma": "all",
