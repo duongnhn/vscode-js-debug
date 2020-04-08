@@ -209,7 +209,9 @@ export class DebugAdapter implements IDisposable {
     const source = this.sourceContainer.source(params.source);
     if (!source)
       return errors.createSilentError(localize('error.sourceNotFound', 'Source not found'));
-    const content = await source.content();
+    const obj = await source.content();
+    source._lineMap = obj?.lineMap;
+    const content = obj?.content;
     if (content === undefined)
       return errors.createSilentError(
         localize('error.sourceContentDidFail', 'Unable to retrieve source content'),

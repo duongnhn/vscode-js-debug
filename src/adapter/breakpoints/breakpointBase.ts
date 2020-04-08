@@ -193,6 +193,20 @@ export abstract class Breakpoint {
       return;
     }
 
+    if (source._lineMap) {
+      const wasmDisassemblyLine = (byteOffset: number, lineMap: number[]) => {
+        let line = 0;
+        // TODO: Implement binary search if necessary for large wasm modules
+        while (line < lineMap.length && byteOffset > lineMap[line]) {
+          line++;
+        }
+        return line;
+      };
+
+      uiLocation.lineNumber = wasmDisassemblyLine(uiLocation.columnNumber, source._lineMap);
+      uiLocation.columnNumber = 1;
+    }
+
     this.updateCdpRefs(list =>
       list.map(bp =>
         bp.state === CdpReferenceState.Applied && bp.cdpId === cdpId
@@ -368,12 +382,17 @@ export abstract class Breakpoint {
       ? this._manager._sourceContainer.sourcePathResolver.absolutePathToUrl(this.source.path)
       : undefined;
     if (!url) return;
-    await this._setByUrl(thread, url, lineColumn);
+    const targetLineColumn = lineColumn;
+    if (source?._lineMap) {
+      targetLineColumn.columnNumber = source._lineMap[targetLineColumn.lineNumber - 1] + 1;
+      targetLineColumn.lineNumber = 1;
+    }
+    await this._setByUrl(thread, url, targetLineColumn);
     if (this.source.path !== url && this.source.path !== undefined) {
       await this._setByUrl(
         thread,
         absolutePathToFileUrl(this.source.path)?.toString()!,
-        lineColumn,
+        targetLineColumn,
       );
     }
   }

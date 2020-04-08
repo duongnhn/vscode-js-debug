@@ -39,7 +39,12 @@ function isUiLocation(loc: unknown): loc is IUiLocation {
   );
 }
 
-type ContentGetter = () => Promise<string | undefined>;
+interface IContent {
+  content?: string;
+  lineMap?: Array<number> | undefined;
+}
+
+type ContentGetter = () => Promise<IContent | undefined>;
 
 // Each source map has a number of compiled sources referncing it.
 type SourceMapData = { compiled: Set<Source>; map?: SourceMap; loaded: Promise<void> };
@@ -114,7 +119,9 @@ export class Source {
   // Only present on source map sources, exclusive with |_sourceMapSourceByUrl|.
   _compiledToSourceUrl?: Map<Source, string>;
 
-  private _content?: Promise<string | undefined>;
+  _lineMap?: Array<number> | undefined;
+
+  private _content?: Promise<IContent | undefined>;
 
   private readonly _scriptIds: Cdp.Runtime.ScriptId[] = [];
 
@@ -157,7 +164,7 @@ export class Source {
     return this._sourceReference;
   }
 
-  content(): Promise<string | undefined> {
+  content(): Promise<IContent | undefined> {
     if (this._content === undefined) this._content = this._contentGetter();
     return this._content;
   }
@@ -186,7 +193,10 @@ export class Source {
       return map && { map, source: [...this._sourceMapSourceByUrl!.values()][0] };
     }
 
-    const content = await this.content();
+    const obj = await this.content();
+    this._lineMap = obj?.lineMap;
+
+    const content = obj?.content;
     if (!content) {
       return undefined;
     }
@@ -765,9 +775,18 @@ export class SourceContainer {
         resolvedUrl,
         absolutePath,
         content !== undefined
-          ? () => Promise.resolve(content)
+          ? async () => {
+              return {
+                content: content,
+              };
+            }
           : fileUrl
-          ? () => utils.fetch(fileUrl)
+          ? async () => {
+              const str = await utils.fetch(fileUrl);
+              return {
+                content: str,
+              };
+            }
           : compiled._contentGetter,
         undefined,
         undefined,

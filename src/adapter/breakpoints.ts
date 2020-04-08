@@ -219,6 +219,21 @@ export class BreakpointManager {
       }
 
       const { scriptId } = scripts.values().next().value as Script;
+      if (source._lineMap) {
+        start.columnNumber = source._lineMap[start.lineNumber - 1] + 1;
+        end.columnNumber = source._lineMap[start.lineNumber] + 1;
+        start.lineNumber = 1;
+        end.lineNumber = 1;
+      }
+      const wasmDisassemblyLine = (byteOffset: number, lineMap: number[]) => {
+        let line = 0;
+        // TODO: Implement binary search if necessary for large wasm modules
+        while (line < lineMap.length && byteOffset > lineMap[line]) {
+          line++;
+        }
+        return line;
+      };
+
       todo.push(
         thread
           .cdp()
@@ -241,8 +256,10 @@ export class BreakpointManager {
               const sourceLocations = this._sourceContainer.currentSiblingUiLocations(
                 {
                   source: start.source,
-                  lineNumber: location.lineNumber + 1,
-                  columnNumber: (location.columnNumber || 0) + 1,
+                  lineNumber: source._lineMap
+                    ? wasmDisassemblyLine(location.columnNumber || 0, source._lineMap) + 1
+                    : location.lineNumber + 1,
+                  columnNumber: source._lineMap ? 1 : (location.columnNumber || 0) + 1,
                 },
                 source,
               );
