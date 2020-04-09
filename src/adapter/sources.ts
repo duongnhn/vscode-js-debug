@@ -7,7 +7,7 @@ import { URL } from 'url';
 import { InlineScriptOffset, ISourcePathResolver } from '../common/sourcePathResolver';
 import Dap from '../dap/api';
 import * as sourceUtils from '../common/sourceUtils';
-import { prettyPrintAsSourceMap } from '../common/sourceUtils';
+import { prettyPrintAsSourceMap, wasmDisassemblyLine } from '../common/sourceUtils';
 import * as utils from '../common/urlUtils';
 import { ScriptSkipper } from './scriptSkipper';
 import { delay, getDeferred } from '../common/promiseUtil';
@@ -482,15 +482,6 @@ export class SourceContainer {
     }
 
     if (uiLocation.source._lineMap) {
-      const wasmDisassemblyLine = (byteOffset: number, lineMap: number[]) => {
-        let line = 0;
-        // TODO: Implement binary search if necessary for large wasm modules
-        while (line < lineMap.length && byteOffset > lineMap[line]) {
-          line++;
-        }
-        return line;
-      };
-
       uiLocation.lineNumber = wasmDisassemblyLine(
         uiLocation.columnNumber,
         uiLocation.source._lineMap,

@@ -9,6 +9,7 @@ import Cdp from '../../cdp/api';
 import { LogTag } from '../../common/logging';
 import { IUiLocation, base1To0, Source } from '../sources';
 import { urlToRegex, absolutePathToFileUrl } from '../../common/urlUtils';
+import { wasmDisassemblyByteOffset } from '../../common/sourceUtils';
 
 export type LineColumn = { lineNumber: number; columnNumber: number }; // 1-based
 
@@ -370,7 +371,8 @@ export abstract class Breakpoint {
     if (!url) return;
     const targetLineColumn = lineColumn;
     if (source?._lineMap) {
-      targetLineColumn.columnNumber = source._lineMap[targetLineColumn.lineNumber - 1] + 1;
+      targetLineColumn.columnNumber =
+        wasmDisassemblyByteOffset(targetLineColumn.lineNumber - 1, source._lineMap) + 1;
       targetLineColumn.lineNumber = 1;
     }
     await this._setByUrl(thread, url, targetLineColumn);

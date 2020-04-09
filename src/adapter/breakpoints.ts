@@ -22,6 +22,7 @@ import { NeverResolvedBreakpoint } from './breakpoints/neverResolvedBreakpoint';
 import { BreakpointConditionFactory } from './breakpoints/conditions';
 import { SourceMap } from '../common/sourceMaps/sourceMap';
 import { bisectArray } from '../common/objUtils';
+import { wasmDisassemblyLine, wasmDisassemblyByteOffset } from '../common/sourceUtils';
 
 /**
  * Differential result used internally in setBreakpoints.
@@ -220,19 +221,11 @@ export class BreakpointManager {
 
       const { scriptId } = scripts.values().next().value as Script;
       if (source._lineMap) {
-        start.columnNumber = source._lineMap[start.lineNumber - 1] + 1;
-        end.columnNumber = source._lineMap[start.lineNumber] + 1;
+        start.columnNumber = wasmDisassemblyByteOffset(start.lineNumber - 1, source._lineMap) + 1;
+        end.columnNumber = wasmDisassemblyByteOffset(start.lineNumber, source._lineMap) + 1;
         start.lineNumber = 1;
         end.lineNumber = 1;
       }
-      const wasmDisassemblyLine = (byteOffset: number, lineMap: number[]) => {
-        let line = 0;
-        // TODO: Implement binary search if necessary for large wasm modules
-        while (line < lineMap.length && byteOffset > lineMap[line]) {
-          line++;
-        }
-        return line;
-      };
 
       todo.push(
         thread

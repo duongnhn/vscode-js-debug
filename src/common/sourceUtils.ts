@@ -315,3 +315,16 @@ export function getOptimalCompiledPosition(
 
   return getVariance(nextLocation) < nextVariance ? nextLocation : prevLocation;
 }
+
+export function wasmDisassemblyLine(byteOffset: number, lineMap: number[]): number {
+  let line = 0;
+  // TODO: Implement binary search if necessary for large wasm modules
+  while (line < lineMap.length && byteOffset > lineMap[line]) {
+    line++;
+  }
+  return line;
+}
+
+export function wasmDisassemblyByteOffset(line: number, lineMap: number[]): number {
+  return lineMap[line];
+}
